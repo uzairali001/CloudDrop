@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34004.107
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudDrop.ConsoleApp", "CloudDrop.ConsoleApp\CloudDrop.ConsoleApp.csproj", "{09A99C0E-29DE-422F-B754-75F532F43CD9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{09A99C0E-29DE-422F-B754-75F532F43CD9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09A99C0E-29DE-422F-B754-75F532F43CD9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09A99C0E-29DE-422F-B754-75F532F43CD9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09A99C0E-29DE-422F-B754-75F532F43CD9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EA09A32F-3C42-4D4A-9EE4-C5B1E66D6935}
+	EndGlobalSection
+EndGlobal
