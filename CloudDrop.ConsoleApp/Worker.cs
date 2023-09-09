@@ -1,23 +1,44 @@
+using CloudDrop.App.Core.Services.General;
+
+using System.Runtime.CompilerServices;
+using System.Text;
+using System.Threading;
+
 namespace CloudDrop.ConsoleApp;
 
-public class Worker : BackgroundService
+public class Worker : PeriodicBackgroundService
 {
-    private readonly ILogger<Worker> _logger;
-
-    public Worker(ILogger<Worker> logger)
+    public Worker(ILogger<Worker> logger) : base(logger)
     {
-        _logger = logger;
+        _period = TimeSpan.FromSeconds(2);
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+
+    protected override async Task OnTickAsync(CancellationToken stoppingToken)
     {
-        while (!stoppingToken.IsCancellationRequested)
+        string filePath = "TestFile.txt";
+        var chunks = FileChunkService.ChunkAsync(filePath, cancellationToken: stoppingToken);
+
+        await foreach (var item in chunks)
         {
-            if (_logger.IsEnabled(LogLevel.Information))
-            {
-                _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
-            }
+            _logger.LogInformation("Content: {content}", MemoryToString.ToString(item, Encoding.UTF8));
             await Task.Delay(1000, stoppingToken);
         }
     }
+
+    public static class MemoryToString
+    {
+        public static string ToString(Memory<byte> memory, Encoding encoding)
+        {
+            var stringBuilder = new StringBuilder();
+
+            foreach (byte b in memory.ToArray())
+            {
+                stringBuilder.Append(encoding.GetString(new byte[] { b }));
+            }
+
+            return stringBuilder.ToString();
+        }
+    }
 }
+

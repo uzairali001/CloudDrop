@@ -12,4 +12,14 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0-preview.7.23375.6" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CloudDrop.App.Core\CloudDrop.App.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="TestFile.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>
