@@ -2,11 +2,17 @@ using Asp.Versioning;
 
 using CloudDrop.Api;
 using CloudDrop.Api.Core;
+using CloudDrop.Api.Core.Contracts.Repositories;
+using CloudDrop.Api.Core.Contracts.Services.Data;
 using CloudDrop.Api.Core.Contracts.Services.General;
+using CloudDrop.Api.Core.Entities;
 using CloudDrop.Api.Core.Models.Settings;
+using CloudDrop.Api.Core.Repositories;
+using CloudDrop.Api.Core.Services.Data;
 using CloudDrop.Api.Core.Services.General;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -77,16 +83,19 @@ builder.Services.AddApiVersioning(config =>
 });
 #endregion
 
-//#region Database
-//string connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-//    ?? throw new Exception("Connection string not found");
+#region Database
+string connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new Exception("Connection string not found");
 
-//builder.Services.AddDbContext<CloudDropDbContext>(options => options
-//    .UseMySql(connectionString, ServerVersion.Parse("8.0.28"))
-//    .EnableSensitiveDataLogging()
-//    .EnableDetailedErrors()
-//);
-//#endregion
+builder.Services.AddDbContext<CloudDropDbContext>(options => options
+    .UseMySql(connectionString, ServerVersion.Parse("8.0.28"), x =>
+    {
+        x.MigrationsAssembly("CloudDrop.Api.Core");
+    })
+    .EnableSensitiveDataLogging()
+    .EnableDetailedErrors()
+);
+#endregion
 
 
 #region Swagger
@@ -109,11 +118,13 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddAutoMapper(typeof(PlaceholderForAutoMapper));
 
 // Services - Data
+builder.Services.AddTransient<IUploadSessionService, UploadSessionService>();
 
 // Services - General
 builder.Services.AddTransient<IAuthenticationService, AuthenticationService>();
 
 // Repositories
+builder.Services.AddTransient<IUploadSessionRepository, UploadSessionRepository>();
 #endregion 
 
 
