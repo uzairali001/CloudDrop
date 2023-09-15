@@ -32,8 +32,7 @@ public class Worker : PeriodicBackgroundService
             };
 
             string filePath = "TestFile.txt";
-            //int chunkSize = 320 * 1024 * 4; // 1.25 MiB
-            int chunkSize = 320; // 1.25 MiB
+            int chunkSize = 320 * 1024 * 4; // 1.25 MiB
             var chunks = FileChunkService.ChunkAsync(filePath, chunkSize, cancellationToken: stoppingToken);
 
 

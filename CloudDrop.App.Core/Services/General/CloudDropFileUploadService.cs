@@ -1,8 +1,5 @@
 ﻿using CloudDrop.App.Core.Contracts.Services.General;
 
-using System.Net.Http;
-using System.Net;
-
 namespace CloudDrop.App.Core.Services.General;
 internal class CloudDropFileUploadService : FileUploadBaseServices, IFileUploadService
 {

@@ -1,5 +1,4 @@
 ﻿using System.IO.Compression;
-using System.Runtime.CompilerServices;
 
 namespace CloudDrop.App.Core.Services.General;
 public class FileCompressorServices
