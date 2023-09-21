@@ -4,6 +4,8 @@ public static class RetryService
 
     public static async Task ExecuteAsync(Func<Task> operation, Action<RetryOptions>? options = default)
     {
+        Exception? innerException = null;
+
         RetryOptions opts = new();
         options?.Invoke(opts);
 
@@ -20,6 +22,7 @@ public static class RetryService
             catch (Exception ex)
             {
                 // Log the exception
+                innerException = ex;
             }
 
             currentAttempt++;
@@ -30,7 +33,7 @@ public static class RetryService
             }
         }
 
-        throw new Exception($"Failed to execute operation after {opts.MaxAttempts} attempts.");
+        throw new Exception($"Failed to execute operation after {opts.MaxAttempts} attempts.", innerException);
     }
 
     public static async Task<T> ExecuteAsync<T>(Func<Task<T>> operation, Action<RetryOptions>? options = default)

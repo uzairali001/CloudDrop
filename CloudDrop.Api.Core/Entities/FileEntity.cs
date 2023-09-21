@@ -12,6 +12,9 @@ public class FileEntity : Base.BaseEntity
     [Column("user_id")]
     public uint UserId { get; set; }
 
+    [Column("upload_session_id")]
+    public uint? UploadSessionId { get; set; }
+
     [Column("name")]
     [StringLength(255)]
     public required string Name { get; set; }
@@ -29,4 +32,9 @@ public class FileEntity : Base.BaseEntity
     [ForeignKey(nameof(UserId))]
     [InverseProperty(nameof(UserEntity.Files))]
     public UserEntity User { get; set; } = null!;
+
+
+    [ForeignKey(nameof(UploadSessionId))]
+    [InverseProperty(nameof(UploadSessionEntity.File))]
+    public UploadSessionEntity? Session { get; set; }
 }

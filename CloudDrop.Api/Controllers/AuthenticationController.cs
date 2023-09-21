@@ -28,14 +28,14 @@ public class AuthenticationController : Base.BaseController
     ///
     ///     POST /api/auth
     ///     {
-    ///        "email": "testuser@test.com",
+    ///        "username": "testuser@test.com",
     ///        "password": "testuser"
     ///     }
     ///
     /// </remarks>
     /// <response code="200">Whether user is authenticated, status code, message, user object along with access token and refresh token</response>
     [HttpPost("signin")]
-    public async Task<ActionResult<AuthenticationResponse>> Authenticate([FromBody] AuthenticationRequest req, CancellationToken cancellation)
+    public async Task<ActionResult<AuthenticationResponse>> Authenticate(AuthenticationRequest req, CancellationToken cancellation)
     {
         AuthenticationResponse response = await _authenticationService.AuthenticateAsync(req, cancellation);
 

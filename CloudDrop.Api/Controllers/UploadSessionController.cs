@@ -2,6 +2,7 @@
 using CloudDrop.Api.Core.Constants;
 using CloudDrop.Api.Core.Contracts.Services.Data;
 using CloudDrop.Api.Core.Extensions;
+using CloudDrop.Shared.Models.Commands;
 using CloudDrop.Shared.Models.Requests;
 using CloudDrop.Shared.Models.Responses;
 
@@ -38,8 +39,14 @@ public class UploadSessionController : AuthorizeBaseController
     {
         try
         {
-            req.UserId = User.RequiredFirstValue<uint>(ClaimsConstant.Id);
-            var resp = await _uploadSessionService.CreateUploadSessionAsync(req, cancellation);
+            CreateUploadSessionCommand command = new()
+            {
+                Name = req.Name,
+                ConflictBehavior = req.ConflictBehavior,
+                Description = req.Description,
+                UserId = User.RequiredFirstValue<uint>(ClaimsConstant.Id),
+            };
+            var resp = await _uploadSessionService.CreateUploadSessionAsync(command, cancellation);
 
             return resp is not null
                 ? Ok(resp) : BadRequest(resp);

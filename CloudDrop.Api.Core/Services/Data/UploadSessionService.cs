@@ -3,26 +3,32 @@
 using CloudDrop.Api.Core.Contracts.Repositories;
 using CloudDrop.Api.Core.Contracts.Services.Data;
 using CloudDrop.Api.Core.Entities;
+using CloudDrop.Shared.Models.Commands;
 using CloudDrop.Shared.Models.Requests;
 using CloudDrop.Shared.Models.Responses;
 
 using Microsoft.Extensions.Configuration;
+
+using MimeTypes;
 
 namespace CloudDrop.Api.Core.Services.Data;
 public class UploadSessionService : BaseService, IUploadSessionService
 {
     private readonly IConfiguration _configuration;
     private readonly IUploadSessionRepository _uploadSessionRepository;
+    private readonly IFileRepository _fileRepository;
 
     public UploadSessionService(IMapper mapper,
         IConfiguration configuration,
-        IUploadSessionRepository uploadSessionRepository) : base(mapper)
+        IUploadSessionRepository uploadSessionRepository,
+        IFileRepository fileRepository) : base(mapper)
     {
         _configuration = configuration;
         _uploadSessionRepository = uploadSessionRepository;
+        _fileRepository=fileRepository;
     }
 
-    public async Task<UploadSessionResponse?> CreateUploadSessionAsync(CreateUploadSessionRequest req, CancellationToken cancellation)
+    public async Task<UploadSessionResponse?> CreateUploadSessionAsync(CreateUploadSessionCommand command, CancellationToken cancellation)
     {
         Uri baseUri = new(_configuration.GetRequiredSection("AppUrl").Value!);
         TimeSpan expiry = _configuration.GetValue<TimeSpan>("UploadSessionExpiry");
@@ -32,9 +38,9 @@ public class UploadSessionService : BaseService, IUploadSessionService
 
         UploadSessionEntity entity = new()
         {
-            UserId = req.UserId,
+            UserId = command.UserId,
             SessionId = sessionId,
-            FileName = Path.GetFileName(req.Name) ?? sessionId,
+            FileName = Path.GetFileName(command.Name) ?? sessionId,
             ExpirationDateTime = expires,
             ReceivedBytes = 0,
             Size = 0,
@@ -70,6 +76,8 @@ public class UploadSessionService : BaseService, IUploadSessionService
     {
         try
         {
+            DateTime utcNow = DateTime.UtcNow;
+
             UploadSessionEntity uploadSession = await _uploadSessionRepository
                 .GetFirstAsync(e => e.SessionId == request.SessionId, asTracking: true, cancellation: cancellation)
                 ?? throw new Exception("Session not found");
@@ -78,9 +86,6 @@ public class UploadSessionService : BaseService, IUploadSessionService
             {
                 throw new Exception("Session expired, create new session and start over");
             }
-
-            var a = uploadSession.ReceivedBytes;
-            var b = request.ReceivedBytes;
 
             string uploadDirectory = _configuration.GetValue<string>("UploadPath")
                 ?? throw new Exception("UploadPath not found in settings");
@@ -95,23 +100,48 @@ public class UploadSessionService : BaseService, IUploadSessionService
                 await request.File.CopyToAsync(stream, cancellation);
             }
 
-            if (request.ReceivedBytes+1 == request.Size)
-            {
-                // All bytes are uploaded
-                FileInfo fileInfo = new(filePath);
-                fileInfo.MoveTo(Path.Combine(directoryPath, uploadSession.FileName), true);
-            }
+            bool isCompleted = request.BytesTo+1 == request.Size;
 
             TimeSpan expiry = _configuration.GetValue<TimeSpan>("UploadSessionExpiry");
 
             uploadSession.ExpirationDateTime = DateTime.UtcNow.Add(expiry);
-            uploadSession.ReceivedBytes = request.ReceivedBytes;
+            uploadSession.ReceivedBytes = request.BytesTo;
             uploadSession.Size = request.Size;
 
-            await Task.Delay(1000);
+            if (request.BytesFrom == 0)
+            {
+                uploadSession.FirstByteReceivedAt = utcNow;
+            }
+            if (isCompleted)
+            {
+                uploadSession.CompletedAt = utcNow;
+                uploadSession.ExpirationDateTime = utcNow;
+            }
 
-            return await _uploadSessionRepository.SaveChangesAsync() > 0;
+            bool isSaved = await _uploadSessionRepository.SaveChangesAsync(cancellation) > 0;
+            if (!isSaved)
+            {
+                return false;
+            }
 
+
+            if (isCompleted)
+            {
+                // All bytes are uploaded
+                FileInfo fileInfo = new(filePath);
+                fileInfo.MoveTo(Path.Combine(directoryPath, uploadSession.FileName), true);
+
+                await _fileRepository.AddOrUpdateAndSaveAsync(new FileEntity()
+                {
+                    UploadSessionId = uploadSession.Id,
+                    UserId = uploadSession.UserId,
+                    Name = uploadSession.FileName,
+                    Size = uploadSession.Size,
+                    MimeType = MimeTypeMap.GetMimeType(Path.GetExtension(uploadSession.FileName))
+                }, cancellation);
+            }
+
+            return true;
         }
         catch (Exception ex)
         {

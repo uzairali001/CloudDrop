@@ -16,7 +16,7 @@ Environment.CurrentDirectory = AppDomain.CurrentDomain.BaseDirectory;
 #if RELEASE
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Console()
-                .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day)
+                .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7)
                 .CreateLogger();
 #else
 Log.Logger = new LoggerConfiguration()

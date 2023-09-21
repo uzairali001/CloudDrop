@@ -44,6 +44,9 @@ public class CloudDropDbContext(DbContextOptions<CloudDropDbContext> dbContextOp
 
             entity.HasOne(e => e.User).WithMany(x => x.Files)
                 .HasConstraintName("FK_file_user_id");
+
+            entity.HasOne(e => e.Session).WithOne(x => x.File)
+               .HasConstraintName("FK_file_upload_session_id");
         });
     }
 }

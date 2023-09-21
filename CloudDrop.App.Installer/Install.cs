@@ -76,7 +76,7 @@ SetApiUrl:
 
             int tries = 3;
 SetUsernamePassword:
-            if (--tries == 0)
+            if (tries-- == 0)
             {
                 return 0;
             }
@@ -88,6 +88,9 @@ SetUsernamePassword:
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
                 Console.WriteLine($"Invalid username or password {Environment.NewLine}");
+                _options.Username = null;
+                _options.Password = null;
+
                 goto SetUsernamePassword;
             }
 
@@ -96,6 +99,9 @@ SetUsernamePassword:
             if (user is null || !user.IsAuthenticated || user.Data is null)
             {
                 Console.WriteLine($"Invalid username or password {Environment.NewLine}");
+                _options.Username = null;
+                _options.Password = null;
+
                 goto SetUsernamePassword;
             }
 
@@ -220,21 +226,20 @@ SetUsernamePassword:
     private Process? LaunchTheApp()
     {
         string appPath = Path.Combine(_appFolder, AppConstants.AppName + ".exe");
-        return Process.Start(appPath);
+        //return Process.Start(appPath);
 
-        //// Prepare the process to run
-        //ProcessStartInfo process = new()
-        //{
-        //    // Enter in the command line arguments, everything you would enter after the executable name itself
-        //    //start.Arguments = arguments;
-        //    // Enter the executable to run, including the complete path
-        //    FileName = appPath,
-        //    // Do you want to show a Console window?
-        //    WindowStyle = ProcessWindowStyle.Hidden,
-        //    CreateNoWindow = true
-        //};
+        // Prepare the process to run
+        ProcessStartInfo process = new()
+        {
+            // Enter the executable to run, including the complete path
+            FileName = appPath,
+            // Do you want to show a Console window?
+            //WindowStyle = ProcessWindowStyle.Hidden,
+            //CreateNoWindow = true,
+            UseShellExecute = true,
+        };
 
-        //return Process.Start(process);
+        return Process.Start(process);
     }
 
 }

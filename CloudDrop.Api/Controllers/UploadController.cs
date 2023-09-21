@@ -46,16 +46,21 @@ public class UploadController : AuthorizeBaseController
         UpdateUploadSessionRequest request = new()
         {
             Size = contentRangeValue.Length!.Value,
-            ReceivedBytes = contentRangeValue.To!.Value,
+            BytesFrom = contentRangeValue.From!.Value,
+            BytesTo = contentRangeValue.To!.Value,
             File = chunk,
             SessionId = sessionId,
         };
 
         bool isSuccess = await _uploadSessionService.UpdateUploadSessionAsync(request, cancellation);
+        if (!isSuccess)
+        {
+            return BadRequest();
+        }
 
-        return isSuccess
-            ? Ok()
-            : BadRequest();
+        return request.BytesTo+1 == request.Size
+            ? StatusCode(201)
+            : Accepted();
     }
 
 

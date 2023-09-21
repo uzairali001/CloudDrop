@@ -59,12 +59,19 @@ namespace CloudDrop.Api.Core.Migrations
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
+                    b.Property<uint?>("UploadSessionId")
+                        .HasColumnType("int unsigned")
+                        .HasColumnName("upload_session_id");
+
                     b.Property<uint>("UserId")
                         .HasColumnType("int unsigned")
                         .HasColumnName("user_id");
 
                     b.HasKey("Id")
                         .HasName("PRIMARY");
+
+                    b.HasIndex("UploadSessionId")
+                        .IsUnique();
 
                     b.HasIndex(new[] { "UserId", "Name" }, "UK_file_user_id_name")
                         .IsUnique();
@@ -79,6 +86,10 @@ namespace CloudDrop.Api.Core.Migrations
                         .HasColumnType("int unsigned")
                         .HasColumnName("id")
                         .HasColumnOrder(0);
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("completed_at");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -95,6 +106,10 @@ namespace CloudDrop.Api.Core.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)")
                         .HasColumnName("file_name");
+
+                    b.Property<DateTime?>("FirstByteReceivedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("first_byte_received_at");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("tinyint(1)")
@@ -201,12 +216,19 @@ namespace CloudDrop.Api.Core.Migrations
 
             modelBuilder.Entity("CloudDrop.Api.Core.Entities.FileEntity", b =>
                 {
+                    b.HasOne("CloudDrop.Api.Core.Entities.UploadSessionEntity", "Session")
+                        .WithOne("File")
+                        .HasForeignKey("CloudDrop.Api.Core.Entities.FileEntity", "UploadSessionId")
+                        .HasConstraintName("FK_file_upload_session_id");
+
                     b.HasOne("CloudDrop.Api.Core.Entities.UserEntity", "User")
                         .WithMany("Files")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("FK_file_user_id");
+
+                    b.Navigation("Session");
 
                     b.Navigation("User");
                 });
@@ -221,6 +243,11 @@ namespace CloudDrop.Api.Core.Migrations
                         .HasConstraintName("FK_upload_session_user_id");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CloudDrop.Api.Core.Entities.UploadSessionEntity", b =>
+                {
+                    b.Navigation("File");
                 });
 
             modelBuilder.Entity("CloudDrop.Api.Core.Entities.UserEntity", b =>

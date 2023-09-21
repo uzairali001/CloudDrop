@@ -59,7 +59,9 @@ public class Worker : PeriodicBackgroundService
                 UploadSessionResponse uploadSession = await GetUploadSession(file, stoppingToken);
 
                 // Upload file as chunks
-                await UploadChunkAsync(file, uploadSession, stoppingToken);
+                await UploadAsChunksAsync(file, uploadSession, stoppingToken);
+                
+                File.Delete(file);
             }
         }
         catch (Exception ex)
@@ -70,7 +72,7 @@ public class Worker : PeriodicBackgroundService
 
     }
 
-    private async Task UploadChunkAsync(string filePath, UploadSessionResponse uploadSession, CancellationToken stoppingToken = default)
+    private async Task UploadAsChunksAsync(string filePath, UploadSessionResponse uploadSession, CancellationToken stoppingToken = default)
     {
         HttpClient httpClient = new()
         {
@@ -81,6 +83,8 @@ public class Worker : PeriodicBackgroundService
         long startByte = 0;
         long fileSize = new FileInfo(filePath).Length;
         var chunks = FileChunkService.ChunkAsync(filePath, _chunkSize, cancellationToken: stoppingToken);
+
+        _logger.LogInformation($"----------------- {Path.GetFileName(filePath)} -----------------");
 
         await foreach (var item in chunks)
         {
@@ -108,10 +112,14 @@ public class Worker : PeriodicBackgroundService
 
     private async Task<UploadSessionResponse> GetUploadSession(string fileName, CancellationToken stoppingToken)
     {
+        Dictionary<string, string> headers = new()
+        {
+            { "Authorization", $"Bearer {_session.AuthToken}" }
+        };
         return await _httpClient.PostAsync<UploadSessionResponse>(_session.ApiUrl + "upload/session", new CreateUploadSessionRequest()
         {
             ConflictBehavior = ConflictBehaviors.Replace,
             Name = Path.GetFileName(fileName),
-        }, ct: stoppingToken) ?? throw new Exception("Unable to create session");
+        }, headers: headers, ct: stoppingToken) ?? throw new Exception("Unable to create session");
     }
 }

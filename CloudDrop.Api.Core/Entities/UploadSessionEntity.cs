@@ -30,9 +30,18 @@ public class UploadSessionEntity : Base.BaseEntity
     [Column("expiration_datetime")]
     public DateTime ExpirationDateTime { get; set; }
 
+    [Column("first_byte_received_at")]
+    public DateTime? FirstByteReceivedAt { get; set; }
+
+    [Column("completed_at")]
+    public DateTime? CompletedAt { get; set; }
+
 
     // Navigation Properties
     [ForeignKey(nameof(UserId))]
     [InverseProperty(nameof(UserEntity.UploadSessions))]
     public UserEntity User { get; set; } = null!;
+
+    [InverseProperty(nameof(FileEntity.Session))]
+    public FileEntity? File { get; set; }
 }

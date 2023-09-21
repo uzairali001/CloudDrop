@@ -3,15 +3,21 @@
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-preview AS base
 USER app
 WORKDIR /app
-EXPOSE 8080
-EXPOSE 8081
+EXPOSE 80
+EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0-preview AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["CloudDrop.Api/CloudDrop.Api.csproj", "CloudDrop.Api/"]
+COPY ["CloudDrop.Api.Core/CloudDrop.Api.Core.csproj", "CloudDrop.Api.Core/"]
+COPY ["CloudDrop.Shared/CloudDrop.Shared.csproj", "CloudDrop.Shared/"]
 RUN dotnet restore "CloudDrop.Api/CloudDrop.Api.csproj"
-COPY . .
+
+COPY ./CloudDrop.Api ./CloudDrop.Api
+COPY ./CloudDrop.Api.Core ./CloudDrop.Api.Core
+COPY ./CloudDrop.Shared ./CloudDrop.Shared
+
 WORKDIR "/src/CloudDrop.Api"
 RUN dotnet build "CloudDrop.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
