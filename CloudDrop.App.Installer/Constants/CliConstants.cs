@@ -1,7 +1,7 @@
 ﻿namespace CloudDrop.App.Installer.Constants;
 public class CliConstants
 {
-    public const string BaseUrl = "baseurl";
+    public const string ApiUrl = "apiurl";
     public const string Username = "username";
     public const string Password = "password";
     public const string TargetDirectory = "targetDirectory";

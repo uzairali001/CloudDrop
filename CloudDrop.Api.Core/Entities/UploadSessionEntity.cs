@@ -1,9 +1,18 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.EntityFrameworkCore;
+
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CloudDrop.Api.Core.Entities;
+
+[Table("upload_session")]
+
+[Index(nameof(SessionId), Name = "UK_upload_session_session_id", IsUnique = true)]
 public class UploadSessionEntity : Base.BaseEntity
 {
+    [Column("user_id")]
+    public uint UserId { get; set; }
+
     [Column("session_id")]
     [StringLength(50)]
     public required string SessionId { get; set; }
@@ -20,4 +29,10 @@ public class UploadSessionEntity : Base.BaseEntity
 
     [Column("expiration_datetime")]
     public DateTime ExpirationDateTime { get; set; }
+
+
+    // Navigation Properties
+    [ForeignKey(nameof(UserId))]
+    [InverseProperty(nameof(UserEntity.UploadSessions))]
+    public UserEntity User { get; set; } = null!;
 }

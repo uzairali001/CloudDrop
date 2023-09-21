@@ -125,6 +125,7 @@ builder.Services.AddTransient<IAuthenticationService, AuthenticationService>();
 
 // Repositories
 builder.Services.AddTransient<IUploadSessionRepository, UploadSessionRepository>();
+builder.Services.AddTransient<IUserRepository, UserRepository>();
 #endregion 
 
 

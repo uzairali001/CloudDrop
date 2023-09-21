@@ -13,8 +13,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Serilog;
 
+using UzairAli.NetHttpClient.Extensions;
+
 namespace CloudDrop.App.Installer;
-[Command(Name = "HPI", Description = "Install HP and configure."),
+[Command(Name = "CloudDropInstaller", Description = "Install CloudDrop Client Application."),
     Subcommand(typeof(Install)),
     Subcommand(typeof(Uninstall))
     ]
@@ -30,10 +32,18 @@ public class Program
             .AddLogging(configure => configure.AddSerilog(dispose: true))
             .AddDbContext<CloudDropDbContext>()
             .AddScoped<AppAuthenticationService>()
+            .AddSingleton<AppSessionService>()
             .AddScoped<IAuthenticationService, AuthenticationService>()
             .AddScoped<IAuthenticationRepository, AuthenticationRepository>()
             .AddScoped<Install>()
             .AddScoped<Uninstall>()
+            .AddHttpClientService(
+            httpOptions => { },
+            jsonOptions =>
+            {
+                jsonOptions.PropertyNameCaseInsensitive = true;
+                jsonOptions.TypeInfoResolver = SourceGenerators.SourceGenerationContext.Default;
+            })
             .BuildServiceProvider();
 
 
@@ -54,9 +64,9 @@ public class Program
         app.VersionOption("--version", "1.0.0");
 
         // Plug the execution method
-        app.OnExecute(() =>
+        app.OnExecuteAsync(async (cancelation) =>
         {
-            //app.ShowHelp();
+            app.ShowHelp();
             return 0;
         });
 
@@ -65,7 +75,7 @@ public class Program
             cmd.HelpOption("-?|-h|--help");
             cmd.Description = "Install the app";
 
-            CommandOption baseUrl = cmd.Option($"--{CliConstants.BaseUrl}", "Baseurl for API", CommandOptionType.SingleValue);
+            CommandOption apiUrl = cmd.Option($"--{CliConstants.ApiUrl}", "Url for API", CommandOptionType.SingleValue);
             CommandOption username = cmd.Option($"--{CliConstants.Username}", "User's username or email", CommandOptionType.SingleValue);
             CommandOption password = cmd.Option($"--{CliConstants.Password}", "User's password", CommandOptionType.SingleValue);
             CommandOption targetDirectory = cmd.Option($"--{CliConstants.TargetDirectory}", "The directory of the files to upload.", CommandOptionType.SingleValue);
@@ -75,7 +85,7 @@ public class Program
             {
                 CommandLineOptions options = new()
                 {
-                    BaseUrl = baseUrl.Value(),
+                    ApiUrl = apiUrl.Value(),
                     Username = username.Value(),
                     Password = password.Value(),
                     FilesDirectory = targetDirectory.Value(),
@@ -114,6 +124,6 @@ public class Program
             Console.WriteLine(ex.Message);
             app.ShowHelp();
         }
-    }
 
+    }
 }

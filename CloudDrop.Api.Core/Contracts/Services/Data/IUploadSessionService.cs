@@ -1,5 +1,5 @@
-﻿using CloudDrop.Api.Core.Models.Requests;
-using CloudDrop.Api.Core.Models.Responses;
+﻿using CloudDrop.Shared.Models.Requests;
+using CloudDrop.Shared.Models.Responses;
 
 namespace CloudDrop.Api.Core.Contracts.Services.Data;
 public interface IUploadSessionService

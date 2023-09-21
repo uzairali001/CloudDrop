@@ -1,4 +1,5 @@
 ﻿using CloudDrop.Api.Core.Entities.Base;
+
 using System.Linq.Expressions;
 
 namespace CloudDrop.Api.Core.Contracts.Repositories;

@@ -1,14 +1,10 @@
-﻿using CloudDrop.Api.Core.Contracts.Services.Data;
-using CloudDrop.Api.Core.Models.Requests;
-using CloudDrop.Api.Core.Services.Data;
+﻿using CloudDrop.Api.Controllers.Base;
+using CloudDrop.Api.Core.Contracts.Services.Data;
+using CloudDrop.Shared.Models.Requests;
 
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.Configuration;
 
-using System;
 using System.Net.Http.Headers;
-using System.Text;
 
 namespace CloudDrop.Api.Controllers;
 
@@ -56,7 +52,7 @@ public class UploadController : AuthorizeBaseController
         };
 
         bool isSuccess = await _uploadSessionService.UpdateUploadSessionAsync(request, cancellation);
-        
+
         return isSuccess
             ? Ok()
             : BadRequest();

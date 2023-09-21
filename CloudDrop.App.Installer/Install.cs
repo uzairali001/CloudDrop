@@ -1,12 +1,12 @@
 ﻿using CloudDrop.App.Core.Constants;
+using CloudDrop.App.Core.Contracts.Services.Data;
 using CloudDrop.App.Core.Entities;
+using CloudDrop.App.Core.Models.Dtos;
 using CloudDrop.App.Core.Models.Options;
 using CloudDrop.App.Core.Services.General;
-using CloudDrop.App.Installer.Constants;
 
 using McMaster.Extensions.CommandLineUtils;
 
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
 
 using System.Diagnostics;
@@ -16,14 +16,22 @@ public class Install
 {
     private readonly string _appFolder = AppConstants.AppDirectory;
     private readonly AppAuthenticationService _appAuthenticationService;
-    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IAuthenticationService _authenticationService;
+    private readonly AppSessionService _sessionService;
+    private readonly CloudDropDbContext _dbContext;
+
+    //private readonly IServiceScopeFactory _scopeFactory;
     private CommandLineOptions _options;
 
     public Install(AppAuthenticationService appAuthenticationService,
-       IServiceScopeFactory scopeFactory)
+        IAuthenticationService authenticationService,
+        AppSessionService sessionService,
+        CloudDropDbContext dbContext)
     {
         _appAuthenticationService = appAuthenticationService;
-        _scopeFactory = scopeFactory;
+        _authenticationService = authenticationService;
+        _sessionService = sessionService;
+        _dbContext = dbContext;
     }
 
     public async Task<int> OnExecuteAsync(CommandLineOptions options)
@@ -39,23 +47,73 @@ public class Install
                 return 0;
             }
 
-            using var scope = _scopeFactory.CreateScope();
-            using var context = scope.ServiceProvider.GetRequiredService<CloudDropDbContext>();
-            context.Database.EnsureCreated();
+            //using var scope = _scopeFactory.CreateScope();
+            //using var context = scope.ServiceProvider.GetRequiredService<CloudDropDbContext>();
+            _dbContext.Database.EnsureCreated();
 
 
             Console.WriteLine("Configuring...");
 
-            // Set BaseUrl
-            await ConfigureBaseUrlAsync();
+            // Set files directory
+            string? filesDirectory = _options.FilesDirectory ?? AskForFilesDirectory();
 
+SetApiUrl:
+// Set Api Url
+            string apiUrl = _options.ApiUrl ?? AskForApiUrl()
+                ?? throw new Exception("Api Url must be set");
+            apiUrl += apiUrl[^1] != '/' ? "/" : "";
+
+            //bool isValid = ValidateUrlWithRegex(apiUrl);
+            //if (isValid)
+            //{
+            //    Console.WriteLine($"Invalid Api url {Environment.NewLine}");
+
+            //    // Reset supplied options so application can ask for new one
+            //    _options.ApiUrl = null;
+
+            //    goto SetApiUrl;
+            //}
+
+            int tries = 3;
+SetUsernamePassword:
+            if (--tries == 0)
+            {
+                return 0;
+            }
             // Set username/email and password
             // Authenticate User
-            bool isSet = await ConfigureUserAsync();
-            if (isSet is false)
+            string? username = _options.Username ?? AskForUsernameOrEmail();
+            string? password = _options.Password ?? AskForPassword();
+
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
+                Console.WriteLine($"Invalid username or password {Environment.NewLine}");
+                goto SetUsernamePassword;
+            }
+
+            Console.WriteLine("Authenticating user...");
+            var user = await _appAuthenticationService.AuthenticateUserAsync(apiUrl, username, password);
+            if (user is null || !user.IsAuthenticated || user.Data is null)
+            {
+                Console.WriteLine($"Invalid username or password {Environment.NewLine}");
+                goto SetUsernamePassword;
+            }
+
+            var dto = new AuthenticationDto()
+            {
+                AuthToken = user.Data.AccessToken.Token,
+                ApiUrl = apiUrl,
+                FilesDirectory = filesDirectory,
+                Username = username,
+            };
+            bool isUpdated = await _authenticationService.AddOrUpdateAsync(dto);
+
+            if (!isUpdated)
+            {
+                Console.WriteLine("Error unable to set data");
                 return 1;
             }
+            _sessionService.SetSession(dto);
 
             Console.WriteLine();
             Console.WriteLine("Installing the app...");
@@ -98,39 +156,7 @@ public class Install
         }
     }
 
-    private async Task<bool> ConfigureUserAsync()
-    {
-        string? username = _options.Username ?? AskForUsernameOrEmail();
-        string? password = _options.Password ?? AskForPassword();
 
-        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
-        {
-            Console.WriteLine("Invalid username or password");
-            return false;
-        }
-        Console.WriteLine("Authenticating user...");
-        var user = await _appAuthenticationService.AuthenticateUserAsync(username, password);
-        if (user is null || string.IsNullOrEmpty(user.Email) || string.IsNullOrEmpty(user.AuthToken))
-        {
-            Console.WriteLine("Invalid username or password");
-            return false;
-        }
-
-        _ = _appAuthenticationService.SetAuthenticationTokenAsync(user.AuthToken);
-        return true;
-    }
-
-
-    private async Task ConfigureBaseUrlAsync()
-    {
-        string? baseUrl = _options.BaseUrl ?? AskForBaseURL();
-        if (string.IsNullOrWhiteSpace(baseUrl))
-        {
-            throw new Exception("Invalid BaseUrl");
-        }
-
-        await _appAuthenticationService.SetBaseUrlAsync(baseUrl);
-    }
 
     private void CopyApplicationFiles()
     {
@@ -155,9 +181,9 @@ public class Install
         rkApp?.SetValue(AppConstants.NameOnRegistry, appPath);
     }
 
-    private string? AskForBaseURL()
+    private string? AskForApiUrl()
     {
-        return Prompt.GetString("What is the baseURL? :",
+        return Prompt.GetString("What is the API URL? :",
             promptColor: ConsoleColor.White,
             promptBgColor: ConsoleColor.Black);
     }
@@ -210,4 +236,5 @@ public class Install
 
         //return Process.Start(process);
     }
+
 }

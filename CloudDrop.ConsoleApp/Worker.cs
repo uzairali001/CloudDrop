@@ -1,10 +1,10 @@
-using CloudDrop.Api.Core.Models.Requests;
-using CloudDrop.Api.Core.Models.Responses;
+using CloudDrop.App.Core.Models.Dtos;
 using CloudDrop.App.Core.Services.General;
+using CloudDrop.Shared.Enums;
+using CloudDrop.Shared.Models.Requests;
+using CloudDrop.Shared.Models.Responses;
 
-using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text;
 
 using UzairAli.NetHttpClient;
 
@@ -12,13 +12,32 @@ namespace CloudDrop.ConsoleApp;
 
 public class Worker : PeriodicBackgroundService
 {
+    private readonly int _chunkSize = 320 * 1024 * 4; // 1.25 MiB
+    private readonly AuthenticationDto _session;
+
     private readonly IHttpClientService _httpClient;
 
     public Worker(ILogger<Worker> logger,
-        IHttpClientService httpClient) : base(logger)
+        IHttpClientService httpClient,
+        AppSessionService appSessionService) : base(logger)
     {
-        _period = TimeSpan.FromSeconds(1);
+        _period = TimeSpan.FromMinutes(10);
+
         _httpClient = httpClient;
+
+        if (appSessionService.Session is null)
+        {
+            throw new Exception("Invalid session");
+        }
+        if (string.IsNullOrEmpty(appSessionService.Session.FilesDirectory))
+        {
+            throw new Exception("Files directory is not set");
+        }
+
+        _session = appSessionService.Session;
+
+
+        _ = OnTickAsync(new CancellationToken());
     }
 
 
@@ -26,63 +45,73 @@ public class Worker : PeriodicBackgroundService
     {
         try
         {
-            HttpClient httpClient = new()
+            string[]? files = Directory.GetFiles(_session.FilesDirectory!, "*.mp3");
+            if (files is null || files.Length == 0)
             {
-                BaseAddress = new Uri("http://localhost:5124/v1/"),
-            };
+                return;
+            }
 
-            string filePath = "TestFile.txt";
-            int chunkSize = 320 * 1024 * 4; // 1.25 MiB
-            var chunks = FileChunkService.ChunkAsync(filePath, chunkSize, cancellationToken: stoppingToken);
+            _logger.LogInformation($"Uploading {files.Length} files");
 
-
-            long startByte = 0;
-            long fileSize = new FileInfo(filePath).Length;
-
-            UploadSessionResponse sessionResponse = await _httpClient.PostAsync<UploadSessionResponse>("upload/session", new CreateUploadSessionRequest()
+            foreach (var file in files)
             {
-                ConflictBehavior = Api.Core.Enums.ConflictBehaviors.Replace,
-                Name = Path.GetFileName(filePath),
-            }, ct: stoppingToken) ?? throw new Exception("Unable to create session");
+                // Get Upload session
+                UploadSessionResponse uploadSession = await GetUploadSession(file, stoppingToken);
 
-            await foreach (var item in chunks)
-            {
-                ContentRangeHeaderValue contentRange = new(startByte, startByte + item.Length -1, fileSize);
-
-                _logger.LogInformation($"Uploading bytes: {contentRange}");
-
-                using (MultipartFormDataContent form = new())
-                {
-                    var byteContent = new ByteArrayContent(item.ToArray());
-
-                    form.Add(byteContent, "chunk", Path.GetFileName(filePath));
-                    form.Headers.Add("Content-Range", contentRange.ToString());
-
-                    await RetryService.ExecuteAsync(async () =>
-                    {
-                        var response = await httpClient.PutAsync($"upload/{sessionResponse.SessionId}", form, stoppingToken);
-                        response.EnsureSuccessStatusCode();
-                    });
-                }
-
-                startByte += item.Length;
+                // Upload file as chunks
+                await UploadChunkAsync(file, uploadSession, stoppingToken);
             }
         }
         catch (Exception ex)
         {
-
+            _logger.LogError(ex, "Uploading failed");
+            await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
         }
 
-        await Task.Delay(1000 * 60 * 60);
     }
 
-
-}
-
-public static class MemoryByteExtensions
-{
-    public static string ToStringContent(this Memory<byte> memory, Encoding? encoding = default)
+    private async Task UploadChunkAsync(string filePath, UploadSessionResponse uploadSession, CancellationToken stoppingToken = default)
     {
-        return (encoding ?? Encoding.UTF8).GetString(memory.ToArray());
+        HttpClient httpClient = new()
+        {
+            BaseAddress = new Uri(_session.ApiUrl),
+        };
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _session.AuthToken);
+
+        long startByte = 0;
+        long fileSize = new FileInfo(filePath).Length;
+        var chunks = FileChunkService.ChunkAsync(filePath, _chunkSize, cancellationToken: stoppingToken);
+
+        await foreach (var item in chunks)
+        {
+            ContentRangeHeaderValue contentRange = new(startByte, startByte + item.Length -1, fileSize);
+
+            _logger.LogInformation($"Uploading bytes: {contentRange}");
+
+            using (MultipartFormDataContent form = new())
+            {
+                var byteContent = new ByteArrayContent(item.ToArray());
+
+                form.Add(byteContent, "chunk", Path.GetFileName(filePath));
+                form.Headers.ContentRange = contentRange;
+
+                await RetryService.ExecuteAsync(async () =>
+                {
+                    var response = await httpClient.PutAsync($"upload/{uploadSession.SessionId}", form, stoppingToken);
+                    response.EnsureSuccessStatusCode();
+                });
+            }
+
+            startByte += item.Length;
+        }
+    }
+
+    private async Task<UploadSessionResponse> GetUploadSession(string fileName, CancellationToken stoppingToken)
+    {
+        return await _httpClient.PostAsync<UploadSessionResponse>(_session.ApiUrl + "upload/session", new CreateUploadSessionRequest()
+        {
+            ConflictBehavior = ConflictBehaviors.Replace,
+            Name = Path.GetFileName(fileName),
+        }, ct: stoppingToken) ?? throw new Exception("Unable to create session");
     }
 }

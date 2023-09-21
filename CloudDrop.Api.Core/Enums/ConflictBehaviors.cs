@@ -2,7 +2,7 @@
 
 namespace CloudDrop.Api.Core.Enums;
 
-[JsonConverter(typeof(JsonStringEnumConverter))]
+[JsonConverter(typeof(JsonStringEnumConverter<ConflictBehaviors>))]
 public enum ConflictBehaviors
 {
     Rename,

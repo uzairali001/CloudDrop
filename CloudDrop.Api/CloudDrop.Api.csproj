@@ -28,6 +28,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CloudDrop.Api.Core\CloudDrop.Api.Core.csproj" />
+    <ProjectReference Include="..\CloudDrop.Shared\CloudDrop.Shared.csproj" />
   </ItemGroup>
 
 </Project>

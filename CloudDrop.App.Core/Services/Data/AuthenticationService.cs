@@ -14,52 +14,45 @@ public class AuthenticationService : BaseService, IAuthenticationService
         _authenticationRepository = authenticationRepository;
     }
 
-    public async Task<string?> GetAuthenticationTokenAsync(CancellationToken ct = default)
+    public async Task<AuthenticationDto?> GetAsync(CancellationToken cancellation = default)
     {
-        return (await _authenticationRepository.GetFirstOrDefaultAsync(tracking: false, ct))?.AuthToken;
-    }
-
-    public async Task<string?> GetBaseUrlAsync(CancellationToken ct = default)
-    {
-        return (await _authenticationRepository.GetFirstOrDefaultAsync(tracking: false, ct))?.BaseUrl;
-    }
-
-    public async Task<bool> AddOrUpdateAuthenticationTokenAsync(string authToken, CancellationToken ct = default)
-    {
-        var entity = await _authenticationRepository.GetFirstOrDefaultAsync(tracking: true, ct);
-        if (entity is not null)
+        var entity = await _authenticationRepository.GetFirstOrDefaultAsync(tracking: false, cancellation);
+        if (entity is null)
         {
-            entity.AuthToken = authToken;
-            return await _authenticationRepository.SaveChangesAsync(ct) > 0;
+            return default;
         }
 
-        await _authenticationRepository.InsertAsync(new AuthenticationEntity()
+        return new AuthenticationDto()
         {
-            AuthToken = authToken,
-            BaseUrl = "",
-        });
-        return await _authenticationRepository.SaveChangesAsync(ct) > 0;
+            AuthToken = entity.AuthToken,
+            ApiUrl = entity.ApiUrl,
+            FilesDirectory = entity.FilesDirectory,
+            Username = entity.Username,
+        };
     }
 
-    public async Task<bool> AddOrUpdateBaseUrlAsync(string baseUrl, CancellationToken ct = default)
+    public async Task<bool> AddOrUpdateAsync(AuthenticationDto authenticationDto, CancellationToken cancellation = default)
     {
-        var entity = await _authenticationRepository.GetFirstOrDefaultAsync(tracking: true, ct);
+        AuthenticationEntity? entity = await _authenticationRepository.GetFirstOrDefaultAsync(tracking: true, cancellation);
         if (entity is not null)
         {
-            entity.BaseUrl = baseUrl;
-            return await _authenticationRepository.SaveChangesAsync(ct) > 0;
+            entity.FilesDirectory = authenticationDto.FilesDirectory;
+            entity.AuthToken = authenticationDto.AuthToken;
+            entity.ApiUrl = authenticationDto.ApiUrl;
+            entity.Username = authenticationDto.Username;
+
+            return await _authenticationRepository.SaveChangesAsync(cancellation) > 0;
         }
 
-        await _authenticationRepository.InsertAsync(new AuthenticationEntity()
+        AuthenticationEntity newEntity = new()
         {
-            AuthToken = "",
-            BaseUrl = baseUrl,
-        });
-        return await _authenticationRepository.SaveChangesAsync(ct) > 0;
-    }
+            FilesDirectory = authenticationDto.FilesDirectory,
+            AuthToken = authenticationDto.AuthToken,
+            ApiUrl = authenticationDto.ApiUrl,
+            Username = authenticationDto.Username,
+        };
 
-    public Task<AuthenticationDto?> GetAsync(CancellationToken cancellation = default)
-    {
-        var entity = await _authenticationRepository.GetFirstOrDefaultAsync(tracking: false, ct)
+        await _authenticationRepository.InsertAsync(newEntity);
+        return await _authenticationRepository.SaveChangesAsync(cancellation) > 0;
     }
 }

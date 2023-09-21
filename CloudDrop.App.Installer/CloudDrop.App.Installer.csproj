@@ -2,23 +2,34 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AssemblyName>CloudDropInstaller</AssemblyName>
+    <SupportedOSPlatformVersion>8.0</SupportedOSPlatformVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="4.1.0" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0-rc.1.23419.4" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
 		<PackageReference Include="Microsoft.Win32.Registry" Version="6.0.0-preview.5.21301.5" />
 		<PackageReference Include="Serilog.Extensions.Logging" Version="7.0.0" />
 		<PackageReference Include="Serilog.Sinks.Console" Version="4.2.0-dev-00918" />
 		<PackageReference Include="Serilog.Sinks.File" Version="5.0.1-dev-00947" />
-		<PackageReference Include="UzairAli.HttpClient" Version="1.0.1" />
+		<PackageReference Include="UzairAli.NetHttpClient" Version="1.0.2" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <ProjectReference Include="..\CloudDrop.App.Core\CloudDrop.App.Core.csproj" />
+	  <ProjectReference Include="..\CloudDrop.Shared\CloudDrop.Shared.csproj" />
 	</ItemGroup>
 
 </Project>

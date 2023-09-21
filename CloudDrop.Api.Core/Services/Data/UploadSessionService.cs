@@ -3,10 +3,9 @@
 using CloudDrop.Api.Core.Contracts.Repositories;
 using CloudDrop.Api.Core.Contracts.Services.Data;
 using CloudDrop.Api.Core.Entities;
-using CloudDrop.Api.Core.Models.Requests;
-using CloudDrop.Api.Core.Models.Responses;
+using CloudDrop.Shared.Models.Requests;
+using CloudDrop.Shared.Models.Responses;
 
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 
 namespace CloudDrop.Api.Core.Services.Data;
@@ -33,6 +32,7 @@ public class UploadSessionService : BaseService, IUploadSessionService
 
         UploadSessionEntity entity = new()
         {
+            UserId = req.UserId,
             SessionId = sessionId,
             FileName = Path.GetFileName(req.Name) ?? sessionId,
             ExpirationDateTime = expires,

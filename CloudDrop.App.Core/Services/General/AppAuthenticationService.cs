@@ -1,98 +1,56 @@
 ﻿using CloudDrop.App.Core.Constants;
-using CloudDrop.App.Core.Contracts.Services.Data;
-using CloudDrop.App.Core.Models.Dtos;
-using CloudDrop.App.Core.Models.Requests;
-using CloudDrop.App.Core.Models.Responses;
+using CloudDrop.Shared.Models.Requests;
+using CloudDrop.Shared.Models.Responses;
 
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-using UzairAli.HttpClient;
-using UzairAli.HttpClient.Exceptions;
+using UzairAli.NetHttpClient;
+using UzairAli.NetHttpClient.Exceptions;
 
 namespace CloudDrop.App.Core.Services.General;
 public class AppAuthenticationService
 {
-    public string? AuthToken { get; private set; }
-    public string? BaseUrl { get; private set; }
+    private readonly ILogger<AppSessionService> _logger;
+    private readonly IHttpClientService _httpClientService;
 
-    private readonly IServiceScopeFactory _scopeFactory;
-    private readonly ILogger<AppAuthenticationService> _logger;
-    private readonly IAuthenticationService _authenticationService;
-
-    public AppAuthenticationService(IServiceScopeFactory scopeFactory,
-        ILogger<AppAuthenticationService> logger,
-        IAuthenticationService authenticationService)
+    public AppAuthenticationService(ILogger<AppSessionService> logger,
+        IHttpClientService httpClientService)
     {
-        _scopeFactory = scopeFactory;
         _logger = logger;
-        _authenticationService = authenticationService;
+        _httpClientService = httpClientService;
     }
 
-    public async Task InitializeAsync()
+
+    public async Task<AuthenticationResponse?> AuthenticateUserAsync(string apiUrl, string username, string password)
     {
-        AuthenticationDto dto = await _authenticationService.GetAsync();
-        BaseUrl = await _authenticationService.GetBaseUrlAsync();
-
-        if (AuthToken is null)
-        {
-            _logger.LogWarning("AuthToken is null");
-        }
-
-        if (BaseUrl is null)
-        {
-            _logger.LogWarning("BaseUrl is null");
-        }
-    }
-
-    public async Task<SigninResponse?> AuthenticateUserAsync(string username, string password)
-    {
-        _logger.LogInformation($"Api: {BaseUrl}");
+        _logger.LogInformation($"Api: {apiUrl}");
 
         try
         {
-            if (string.IsNullOrEmpty(BaseUrl))
+            AuthenticationRequest req = new(username, password);
+
+            HttpResponseMessage result = await _httpClientService.PostAsync(apiUrl + ApiConstants.SigninEndpoint, req);
+            if (!result.IsSuccessStatusCode)
             {
-                _logger.LogError("Baseurl is not set");
+                string content = await result.Content.ReadAsStringAsync();
+                _logger.LogError(content);
                 return default;
             }
 
-            var httpOptions = new UzairAli.HttpClient.Models.Configurations.HttpClientOptions()
-            {
-                BaseAddress = new Uri(BaseUrl)
-            };
-            var client = new HttpClientService(httpOptions);
-
-            return await client.PostAsync<SigninResponse>(ApiConstants.SigninEndpoint, new SigninRequest()
-            {
-                Email = username,
-                Password = password,
-            });
+            return await _httpClientService.DeserializeResponseAsync<AuthenticationResponse?>(result);
         }
         catch (InvalidJsonException ex)
         {
             _logger.LogError(ex.ContentString);
-            _logger.LogInformation($"Api: {BaseUrl}");
-
+            _logger.LogInformation($"Api: {apiUrl}");
         }
-        catch (HttpRequestException e)
+        catch (Exception e)
         {
-            _logger.LogInformation($"Api: {BaseUrl}");
+            _logger.LogInformation($"Api: {apiUrl}");
             _logger.LogError("Exception: {0} ", e.Message);
         }
 
         return default;
     }
 
-    public async Task SetBaseUrlAsync(string baseUrl)
-    {
-        baseUrl += baseUrl[^1] != '/' ? "/" : "";
-        BaseUrl = baseUrl;
-        await _authenticationService.AddOrUpdateBaseUrlAsync(baseUrl);
-    }
-    public async Task SetAuthenticationTokenAsync(string token)
-    {
-        AuthToken = token;
-        await _authenticationService.AddOrUpdateAuthenticationTokenAsync(token);
-    }
 }
