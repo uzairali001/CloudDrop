@@ -5,6 +5,7 @@ using CloudDrop.Api.Core.Contracts.Repositories;
 using CloudDrop.Api.Core.Contracts.Services.General;
 using CloudDrop.Api.Core.Entities;
 using CloudDrop.Api.Core.Models.Dtos;
+using CloudDrop.Api.Core.Models.Requests;
 using CloudDrop.Api.Core.Models.Settings;
 using CloudDrop.Shared.Models.Requests;
 using CloudDrop.Shared.Models.Responses;
@@ -55,7 +56,7 @@ public class AuthenticationService(IMapper mapper,
         };
 
     }
-    public async Task<UserResponse> RegisterAsync(SaveUserRequest req, CancellationToken cancellation = default)
+    public async Task<UserResponse> RegisterAsync(AddUserRequest req, CancellationToken cancellation = default)
     {
         UserEntity user = _mapper.Map<UserEntity>(req);
         user.Password = BCrypt.Net.BCrypt.HashPassword(req.Password);

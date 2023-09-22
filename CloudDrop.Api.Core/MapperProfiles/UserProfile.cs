@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 
 using CloudDrop.Api.Core.Entities;
+using CloudDrop.Api.Core.Models.Requests;
 using CloudDrop.Shared.Models.Requests;
 using CloudDrop.Shared.Models.Responses;
 
@@ -10,6 +11,7 @@ public class UserProfile : Profile
     public UserProfile()
     {
         CreateMap<UserEntity, UserResponse>();
-        CreateMap<SaveUserRequest, UserEntity>();
+        CreateMap<AddUserRequest, UserEntity>();
+        CreateMap<UpdateUserRequest, UserEntity>();
     }
 }

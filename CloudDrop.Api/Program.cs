@@ -12,6 +12,7 @@ using CloudDrop.Api.Core.Services.Data;
 using CloudDrop.Api.Core.Services.General;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -55,6 +56,27 @@ builder.Services.AddAuthentication(options =>
                    expires > DateTime.UtcNow;
         }
     };
+});
+#endregion
+
+#region Cors
+const string AllowAny = "allowAny";
+const string AllowHostFromConfig = "AllowHostFromConfig";
+
+string[] origins = builder.Configuration.GetValue<string>("AllowedOrigins")?.Split(";") ?? [];
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(AllowAny,
+        x => x.AllowAnyOrigin()
+        .AllowAnyMethod()
+        .AllowAnyHeader());
+
+    options.AddPolicy(name: AllowHostFromConfig,
+        x => x.WithOrigins(origins)
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+        .AllowCredentials());
 });
 #endregion
 
@@ -119,6 +141,7 @@ builder.Services.AddAutoMapper(typeof(PlaceholderForAutoMapper));
 
 // Services - Data
 builder.Services.AddTransient<IUploadSessionService, UploadSessionService>();
+builder.Services.AddTransient<IUserService, UserService>();
 
 // Services - General
 builder.Services.AddTransient<IAuthenticationService, AuthenticationService>();
@@ -131,6 +154,14 @@ builder.Services.AddTransient<IFileRepository, FileRepository>();
 
 
 var app = builder.Build();
+//app.UseHttpsRedirection();
+app.UseCors(AllowHostFromConfig);
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor |
+    ForwardedHeaders.XForwardedProto
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -138,8 +169,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    app.UseExceptionHandler("/Error");
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseHsts();
+}
 
-app.UseHttpsRedirection();
+app.UseStatusCodePages();
 
 app.UseAuthorization();
 

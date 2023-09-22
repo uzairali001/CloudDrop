@@ -28,9 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Contracts\Services\Data\" />
     <Folder Include="Exceptions\" />
-    <Folder Include="Services\Data\" />
   </ItemGroup>
 
   <ItemGroup>
