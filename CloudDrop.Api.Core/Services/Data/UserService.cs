@@ -44,7 +44,10 @@ public class UserService(IMapper mapper, IUserRepository userRepository) : BaseS
             return false;
         }
         _mapper.Map(request, user);
-        user.Password = BCrypt.Net.BCrypt.HashPassword(request.Password);
+        if (!string.IsNullOrEmpty(request.Password))
+        {
+            user.Password = BCrypt.Net.BCrypt.HashPassword(request.Password);
+        }
 
         return await userRepository.UpdateAndSaveAsync(user, cancellation);
     }

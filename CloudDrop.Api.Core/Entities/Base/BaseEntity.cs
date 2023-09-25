@@ -10,7 +10,7 @@ public abstract class BaseEntity
 
 
     [Column("is_deleted")]
-    public bool IsDeleted { get; set; }
+    public bool? IsDeleted { get; set; }
 
     [Column("created_at", TypeName = "timestamp")]
     public DateTime CreatedAt { get; set; }

@@ -6,6 +6,7 @@ using CloudDrop.Api.Core.Contracts.Services.General;
 using CloudDrop.Api.Core.Entities;
 using CloudDrop.Api.Core.Models.Dtos;
 using CloudDrop.Api.Core.Models.Requests;
+using CloudDrop.Api.Core.Models.Responses;
 using CloudDrop.Api.Core.Models.Settings;
 using CloudDrop.Shared.Models.Requests;
 using CloudDrop.Shared.Models.Responses;
@@ -29,8 +30,8 @@ public class AuthenticationService(IMapper mapper,
 
     public async Task<AuthenticationResponse> AuthenticateAsync(AuthenticationRequest req, CancellationToken cancellation = default)
     {
-        UserEntity? user = await _userRepository.GetByUsernameOrEmailAsync(req.Username, cancellation);
-        if (user is null || !BCrypt.Net.BCrypt.Verify(req.Password, user.Password))
+        UserEntity? user = await _userRepository.AuthenticateUserAsync(req.Username, req.Password, cancellation);
+        if (user is null)
         {
             return new AuthenticationResponse()
             {
@@ -47,6 +48,7 @@ public class AuthenticationService(IMapper mapper,
             Data = new AuthenticationDataResponse()
             {
                 User = _mapper.Map<UserResponse>(user),
+                Roles = _mapper.Map<IEnumerable<RoleResponse>>(user.UserRoles.Select(x => x.Role)),
                 AccessToken = new AccessTokenResponse()
                 {
                     Token = accessToken.Token,
@@ -94,6 +96,11 @@ public class AuthenticationService(IMapper mapper,
             new Claim(ClaimsConstant.Email, user.Email),
             new Claim(ClaimsConstant.Jti, Guid.NewGuid().ToString()),
         });
+
+        foreach (var role in user.UserRoles)
+        {
+            claims.AddClaim(new Claim(ClaimsConstant.Role, role.Role.Name));
+        }
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {

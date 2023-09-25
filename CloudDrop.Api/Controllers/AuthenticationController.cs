@@ -5,6 +5,7 @@ using CloudDrop.Api.Core.Models.Requests;
 using CloudDrop.Shared.Models.Requests;
 using CloudDrop.Shared.Models.Responses;
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CloudDrop.Api.Controllers;
@@ -68,6 +69,7 @@ public class AuthenticationController : Base.BaseController
     /// <response code="201">When user registered successfully</response>
     /// <response code="400">Unable to register user</response>
     [HttpPost("register")]
+    [Authorize(Roles = "Administrator")]
     public async Task<ActionResult<AuthenticationResponse>> Register([FromBody] AddUserRequest req, CancellationToken cancellation)
     {
         try

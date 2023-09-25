@@ -142,6 +142,7 @@ builder.Services.AddAutoMapper(typeof(PlaceholderForAutoMapper));
 // Services - Data
 builder.Services.AddTransient<IUploadSessionService, UploadSessionService>();
 builder.Services.AddTransient<IUserService, UserService>();
+builder.Services.AddTransient<IFileService, FileService>();
 
 // Services - General
 builder.Services.AddTransient<IAuthenticationService, AuthenticationService>();

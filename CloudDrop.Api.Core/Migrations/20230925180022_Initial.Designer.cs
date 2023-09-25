@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CloudDrop.Api.Core.Migrations
 {
     [DbContext(typeof(CloudDropDbContext))]
-    [Migration("20230921124206_Initial")]
+    [Migration("20230925180022_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -36,9 +36,11 @@ namespace CloudDrop.Api.Core.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<bool>("IsDeleted")
+                    b.Property<bool?>("IsDeleted")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint(1)")
-                        .HasColumnName("is_deleted");
+                        .HasColumnName("is_deleted")
+                        .HasDefaultValueSql("'0'");
 
                     b.Property<string>("MimeType")
                         .IsRequired()
@@ -82,6 +84,58 @@ namespace CloudDrop.Api.Core.Migrations
                     b.ToTable("file");
                 });
 
+            modelBuilder.Entity("CloudDrop.Api.Core.Entities.RoleEntity", b =>
+                {
+                    b.Property<uint>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int unsigned")
+                        .HasColumnName("id")
+                        .HasColumnOrder(0);
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("description");
+
+                    b.Property<bool?>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_active")
+                        .HasDefaultValueSql("'1'");
+
+                    b.Property<bool?>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_deleted")
+                        .HasDefaultValueSql("'0'");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("name");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("timestamp")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("Id")
+                        .HasName("PRIMARY");
+
+                    b.HasIndex(new[] { "Name" }, "UK_role_name")
+                        .IsUnique();
+
+                    b.ToTable("role");
+                });
+
             modelBuilder.Entity("CloudDrop.Api.Core.Entities.UploadSessionEntity", b =>
                 {
                     b.Property<uint>("Id")
@@ -114,9 +168,11 @@ namespace CloudDrop.Api.Core.Migrations
                         .HasColumnType("datetime(6)")
                         .HasColumnName("first_byte_received_at");
 
-                    b.Property<bool>("IsDeleted")
+                    b.Property<bool?>("IsDeleted")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint(1)")
-                        .HasColumnName("is_deleted");
+                        .HasColumnName("is_deleted")
+                        .HasDefaultValueSql("'0'");
 
                     b.Property<long>("ReceivedBytes")
                         .HasColumnType("bigint")
@@ -178,12 +234,19 @@ namespace CloudDrop.Api.Core.Migrations
                         .HasColumnType("varchar(100)")
                         .HasColumnName("first_name");
 
-                    b.Property<bool>("IsDeleted")
+                    b.Property<bool?>("IsActive")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint(1)")
-                        .HasColumnName("is_deleted");
+                        .HasColumnName("is_active")
+                        .HasDefaultValueSql("'1'");
+
+                    b.Property<bool?>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_deleted")
+                        .HasDefaultValueSql("'0'");
 
                     b.Property<string>("LastName")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)")
                         .HasColumnName("last_name");
@@ -217,6 +280,38 @@ namespace CloudDrop.Api.Core.Migrations
                     b.ToTable("user");
                 });
 
+            modelBuilder.Entity("CloudDrop.Api.Core.Entities.UserRoleEntity", b =>
+                {
+                    b.Property<uint>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int unsigned")
+                        .HasColumnName("id")
+                        .HasColumnOrder(0);
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<uint>("RoleId")
+                        .HasColumnType("int unsigned")
+                        .HasColumnName("role_id");
+
+                    b.Property<uint>("UserId")
+                        .HasColumnType("int unsigned")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("PRIMARY");
+
+                    b.HasIndex("RoleId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("user_role");
+                });
+
             modelBuilder.Entity("CloudDrop.Api.Core.Entities.FileEntity", b =>
                 {
                     b.HasOne("CloudDrop.Api.Core.Entities.UploadSessionEntity", "Session")
@@ -248,6 +343,32 @@ namespace CloudDrop.Api.Core.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("CloudDrop.Api.Core.Entities.UserRoleEntity", b =>
+                {
+                    b.HasOne("CloudDrop.Api.Core.Entities.RoleEntity", "Role")
+                        .WithMany("UserRoles")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.ClientCascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_user_role_role_id");
+
+                    b.HasOne("CloudDrop.Api.Core.Entities.UserEntity", "User")
+                        .WithMany("UserRoles")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.ClientCascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_user_role_user_id");
+
+                    b.Navigation("Role");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CloudDrop.Api.Core.Entities.RoleEntity", b =>
+                {
+                    b.Navigation("UserRoles");
+                });
+
             modelBuilder.Entity("CloudDrop.Api.Core.Entities.UploadSessionEntity", b =>
                 {
                     b.Navigation("File");
@@ -258,6 +379,8 @@ namespace CloudDrop.Api.Core.Migrations
                     b.Navigation("Files");
 
                     b.Navigation("UploadSessions");
+
+                    b.Navigation("UserRoles");
                 });
 #pragma warning restore 612, 618
         }

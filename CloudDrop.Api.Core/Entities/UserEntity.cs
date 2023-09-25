@@ -17,7 +17,7 @@ public class UserEntity : BaseEntity
 
     [Column("last_name")]
     [StringLength(100)]
-    public string LastName { get; set; } = string.Empty;
+    public string? LastName { get; set; }
 
     [Column("user_name")]
     [StringLength(100)]
@@ -31,10 +31,18 @@ public class UserEntity : BaseEntity
     public string Password { get; set; } = string.Empty;
 
 
+    [Column("is_active")]
+    public bool? IsActive { get; set; }
+
+
     // Navigation Properties
     [InverseProperty(nameof(FileEntity.User))]
     public ICollection<FileEntity> Files { get; set; } = new HashSet<FileEntity>();
 
     [InverseProperty(nameof(UploadSessionEntity.User))]
     public ICollection<UploadSessionEntity> UploadSessions { get; set; } = new HashSet<UploadSessionEntity>();
+
+
+    [InverseProperty(nameof(UserRoleEntity.User))]
+    public virtual ICollection<UserRoleEntity> UserRoles { get; set; } = new HashSet<UserRoleEntity>();
 }
