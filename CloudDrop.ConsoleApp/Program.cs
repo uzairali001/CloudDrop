@@ -14,12 +14,11 @@ using UzairAli.NetHttpClient.Extensions;
 Environment.CurrentDirectory = AppDomain.CurrentDomain.BaseDirectory;
 
 #if RELEASE
-            Log.Logger = new LoggerConfiguration()
-                .WriteTo.Console()
-                .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7)
-                .CreateLogger();
+    var loggerConfig = new LoggerConfiguration()
+        .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7)
+        .CreateLogger();
 #else
-Log.Logger = new LoggerConfiguration()
+var loggerConfig = new LoggerConfiguration()
     .WriteTo.Console()
     .CreateLogger();
 #endif
@@ -34,6 +33,8 @@ builder.Services.AddSingleton<AppSessionService>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IAuthenticationRepository, AuthenticationRepository>();
 
+builder.Logging.AddSerilog(loggerConfig);
+
 builder.Services.AddHttpClientService(
     httpOptions => { },
     jsonOptions =>
@@ -43,6 +44,7 @@ builder.Services.AddHttpClientService(
     });
 
 var host = builder.Build();
+
 
 using var scope = host.Services.CreateScope();
 AppSessionService sessionService = scope.ServiceProvider.GetRequiredService<AppSessionService>();

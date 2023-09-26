@@ -30,7 +30,7 @@ public class UploadSessionService : BaseService, IUploadSessionService
 
     public async Task<UploadSessionResponse?> CreateUploadSessionAsync(CreateUploadSessionCommand command, CancellationToken cancellation)
     {
-        Uri baseUri = new(_configuration.GetRequiredSection("AppUrl").Value!);
+        Uri publicUrl = new(_configuration.GetRequiredSection("PublicUrl").Value!);
         TimeSpan expiry = _configuration.GetValue<TimeSpan>("UploadSessionExpiry");
 
         string sessionId = Guid.NewGuid().ToString("N");
@@ -52,7 +52,7 @@ public class UploadSessionService : BaseService, IUploadSessionService
             {
                 SessionId = sessionId,
                 ExpirationDateTime = expires,
-                UpdateUrl = new Uri(baseUri, $"/upload/{sessionId}"),
+                UpdateUrl = new Uri(publicUrl, $"/upload/{sessionId}"),
             };
         }
 

@@ -40,7 +40,6 @@ public class AuthenticationService(IMapper mapper,
             };
         }
 
-        var accessToken = GetAccessToken(user);
         return new AuthenticationResponse()
         {
             IsAuthenticated = true,
@@ -49,11 +48,7 @@ public class AuthenticationService(IMapper mapper,
             {
                 User = _mapper.Map<UserResponse>(user),
                 Roles = _mapper.Map<IEnumerable<RoleResponse>>(user.UserRoles.Select(x => x.Role)),
-                AccessToken = new AccessTokenResponse()
-                {
-                    Token = accessToken.Token,
-                    ExpiryDate = accessToken.ExpiryDate
-                },
+                AccessToken = GetAccessToken(user),
             }
         };
 
@@ -72,6 +67,22 @@ public class AuthenticationService(IMapper mapper,
         return _mapper.Map<UserResponse>(user);
     }
 
+    public async Task<AuthenticationDataResponse?> GetByUserIdAsync(uint userId, CancellationToken cancellation = default)
+    {
+        UserEntity? entity = await _userRepository.GetUserByIdAsync(userId, cancellation: cancellation);
+        if (entity is null) {
+            return default;
+        }
+
+        return new AuthenticationDataResponse()
+        {
+            User = _mapper.Map<UserResponse>(entity),
+            Roles = _mapper.Map<IEnumerable<RoleResponse>>(entity.UserRoles.Select(x => x.Role)),
+            AccessToken = GetAccessToken(entity),
+        };
+    }
+
+
 
     private AuthenticationSettings? GetAuthConfig()
     {
@@ -79,7 +90,7 @@ public class AuthenticationService(IMapper mapper,
             .GetSection(AuthenticationSettings.SettingsKey)
             .Get<AuthenticationSettings>();
     }
-    private AccessTokenDto GetAccessToken(UserEntity user)
+    private AccessTokenResponse GetAccessToken(UserEntity user)
     {
         AuthenticationSettings authConfig = GetAuthConfig()
             ?? throw new Exception("Invalid auth config");
@@ -114,7 +125,7 @@ public class AuthenticationService(IMapper mapper,
         var tokenHandler = new JwtSecurityTokenHandler();
         var token = tokenHandler.CreateToken(tokenDescriptor);
 
-        return new AccessTokenDto()
+        return new AccessTokenResponse()
         {
             Token = tokenHandler.WriteToken(token),
             ExpiryDate = expiry,

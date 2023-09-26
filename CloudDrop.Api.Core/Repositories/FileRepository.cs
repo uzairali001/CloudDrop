@@ -1,5 +1,6 @@
 ﻿using CloudDrop.Api.Core.Contracts.Repositories;
 using CloudDrop.Api.Core.Entities;
+using CloudDrop.Api.Core.Models.Commands;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -22,5 +23,12 @@ public class FileRepository(CloudDropDbContext dbContext) : Base.BaseRepository<
         }
 
         return await AddAndSaveAsync(fileEntity, cancellation);
+    }
+
+    public Task<FileEntity?> GetFileForUserAsync(GetFileCommand command, CancellationToken cancellation = default)
+    {
+        return _entity.Where(e => e.Id == command.FileId)
+            .Where(e => e.UserId == command.UserId)
+            .FirstOrDefaultAsync(cancellation);
     }
 }

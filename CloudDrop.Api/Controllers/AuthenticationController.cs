@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 
+using CloudDrop.Api.Core.Constants;
 using CloudDrop.Api.Core.Contracts.Services.General;
+using CloudDrop.Api.Core.Extensions;
 using CloudDrop.Api.Core.Models.Requests;
 using CloudDrop.Shared.Models.Requests;
 using CloudDrop.Shared.Models.Responses;
@@ -11,16 +13,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace CloudDrop.Api.Controllers;
 
 [Route("v{version:apiVersion}/auth")]
-public class AuthenticationController : Base.BaseController
+public class AuthenticationController(
+    IAuthenticationService authenticationService) : Base.BaseController
 {
-    private readonly IAuthenticationService _authenticationService;
-    private readonly IMapper _mapper;
-
-    public AuthenticationController(IAuthenticationService authenticationService)
-    {
-        _authenticationService = authenticationService;
-    }
-
     /// <summary>
     /// Authenticates a user with the specified email address and password.
     /// </summary>
@@ -39,7 +34,7 @@ public class AuthenticationController : Base.BaseController
     [HttpPost("signin")]
     public async Task<ActionResult<AuthenticationResponse>> Authenticate(AuthenticationRequest req, CancellationToken cancellation)
     {
-        AuthenticationResponse response = await _authenticationService.AuthenticateAsync(req, cancellation);
+        AuthenticationResponse response = await authenticationService.AuthenticateAsync(req, cancellation);
 
         if (response.IsAuthenticated is false)
         {
@@ -48,6 +43,7 @@ public class AuthenticationController : Base.BaseController
 
         return Ok(response);
     }
+
 
     /// <summary>
     /// Registers a new user with the given username and password.
@@ -62,7 +58,8 @@ public class AuthenticationController : Base.BaseController
     ///        "lastName": "User",
     ///        "username": "testuser",
     ///        "email": "testuser@test.com",
-    ///        "password": "testuser"
+    ///        "password": "testuser",
+    ///        "isActive": true
     ///     }
     ///
     /// </remarks>
@@ -70,17 +67,29 @@ public class AuthenticationController : Base.BaseController
     /// <response code="400">Unable to register user</response>
     [HttpPost("register")]
     [Authorize(Roles = "Administrator")]
-    public async Task<ActionResult<AuthenticationResponse>> Register([FromBody] AddUserRequest req, CancellationToken cancellation)
+    public async Task<ActionResult<UserResponse>> Register([FromBody] AddUserRequest req, CancellationToken cancellation)
     {
         try
         {
-            UserResponse user = await _authenticationService.RegisterAsync(req, cancellation);
+            UserResponse user = await authenticationService.RegisterAsync(req, cancellation);
             return StatusCode(201, user);
         }
         catch (Exception ex)
         {
             return BadRequest(ex.Message);
         }
+    }
+
+    [HttpGet("session")]
+    [Authorize(Roles = "Administrator")]
+    public async Task<ActionResult<AuthenticationDataResponse>> GetUserSession(CancellationToken cancellation)
+    {
+        uint userId = User.FindFirstValue<uint>(ClaimsConstant.Id);
+        AuthenticationDataResponse? response = await authenticationService.GetByUserIdAsync(userId, cancellation);
+
+        return response is null
+            ? NotFound()
+            : Ok(response);
     }
 
     ///// <summary>

@@ -16,10 +16,12 @@ public class UserRepository(CloudDropDbContext dbContext) : Base.BaseRepository<
 
     public async Task<UserEntity?> AuthenticateUserAsync(string username, string password, CancellationToken cancellation = default)
     {
-        var user = _entity
+        var user = await _entity
             .Include(e => e.UserRoles)
             .ThenInclude(e => e.Role)
-            .FirstOrDefault(e => e.Username == username || e.Email == username);
+            .Where(e => e.IsActive == true)
+            .Where(e => e.IsDeleted == false)
+            .FirstOrDefaultAsync(e => e.Username == username || e.Email == username);
 
         if (user is null)
         {
@@ -32,5 +34,15 @@ public class UserRepository(CloudDropDbContext dbContext) : Base.BaseRepository<
     public async Task<UserEntity?> GetByUsernameOrEmailAsync(string username, CancellationToken cancellation = default)
     {
         return await GetFirstAsync(e => e.Email == username || e.Username == username, cancellation: cancellation);
+    }
+
+    public async Task<UserEntity?> GetUserByIdAsync(uint userId, CancellationToken cancellation = default)
+    {
+        return await _entity
+            .Include(e => e.UserRoles)
+            .ThenInclude(e => e.Role)
+            .Where(e => e.IsActive == true)
+            .Where(e => e.IsDeleted == false)
+            .FirstOrDefaultAsync(cancellation);
     }
 }

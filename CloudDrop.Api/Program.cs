@@ -164,11 +164,10 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
     ForwardedHeaders.XForwardedProto
 });
 
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
 }
 else
 {
@@ -176,6 +175,9 @@ else
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseStatusCodePages();
 

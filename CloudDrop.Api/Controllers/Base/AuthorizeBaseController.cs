@@ -1,6 +1,8 @@
-﻿namespace CloudDrop.Api.Controllers.Base;
+﻿using Microsoft.AspNetCore.Authorization;
 
-//[Authorize]
+namespace CloudDrop.Api.Controllers.Base;
+
+[Authorize]
 public class AuthorizeBaseController : BaseController
 {
 
