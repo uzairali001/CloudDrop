@@ -128,8 +128,11 @@ public class UploadSessionService : BaseService, IUploadSessionService
             if (isCompleted)
             {
                 // All bytes are uploaded
+                string userFilesDirectory = Path.Combine(directoryPath, uploadSession.UserId.ToString());
+                Directory.CreateDirectory(userFilesDirectory);
+
                 FileInfo fileInfo = new(filePath);
-                fileInfo.MoveTo(Path.Combine(directoryPath, uploadSession.FileName), true);
+                fileInfo.MoveTo(Path.Combine(userFilesDirectory, uploadSession.FileName), true);
 
                 await _fileRepository.AddOrUpdateAndSaveAsync(new FileEntity()
                 {

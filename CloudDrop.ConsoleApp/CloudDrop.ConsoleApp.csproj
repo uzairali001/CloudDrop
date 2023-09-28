@@ -9,7 +9,7 @@
     <UserSecretsId>dotnet-CloudDrop.ConsoleApp-cdc13e10-37ce-4dcc-93ac-b50b80af3630</UserSecretsId>
     <AssemblyName>CloudDrop</AssemblyName>
     <SupportedOSPlatformVersion>8.0</SupportedOSPlatformVersion>
-    <OutputType>Exe</OutputType>
+    <OutputType>WinExe</OutputType>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

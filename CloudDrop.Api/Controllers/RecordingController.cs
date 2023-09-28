@@ -67,7 +67,7 @@ public class RecordingController(IFileService fileService,
             string uploadDirectory = configuration.GetValue<string>("UploadPath")
                ?? throw new Exception("UploadPath not found in settings");
 
-            string filePath = Path.Combine(environment.ContentRootPath, uploadDirectory, file.Name);
+            string filePath = Path.Combine(environment.ContentRootPath, uploadDirectory, userId.ToString(), file.Name);
             PhysicalFileResult fileResult = new(filePath, file.MimeType);
             return fileResult;
         }
