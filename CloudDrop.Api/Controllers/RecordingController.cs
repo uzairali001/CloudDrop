@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 
+using System.IO;
+
 namespace CloudDrop.Api.Controllers;
 
 [Route("v{version:apiVersion}/users/{userId}/recordings")]
@@ -49,7 +51,7 @@ public class RecordingController(IFileService fileService,
     /// <response code="500">When unexpected error occurred.</response>
     [HttpGet("{id}")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetRecordingFile(uint userId, uint id, CancellationToken cancellation)
+    public async Task<IResult> GetRecordingFile(uint userId, uint id, CancellationToken cancellation)
     {
         try
         {
@@ -61,20 +63,25 @@ public class RecordingController(IFileService fileService,
             FileResponse? file = await fileService.GetRecordingFileAsync(command, cancellation);
             if (file is null)
             {
-                return NotFound();
+                //return NotFound();
+                return default;
             }
 
             string uploadDirectory = configuration.GetValue<string>("UploadPath")
                ?? throw new Exception("UploadPath not found in settings");
 
             string filePath = Path.Combine(environment.ContentRootPath, uploadDirectory, userId.ToString(), file.Name);
-            PhysicalFileResult fileResult = new(filePath, file.MimeType);
-            return fileResult;
+
+            var fileStream = System.IO.File.OpenRead(filePath);
+            return Results.File(fileStream, file.MimeType, Path.GetFileName(filePath), enableRangeProcessing: true);
+            //PhysicalFileResult fileResult = new(filePath, file.MimeType);
+            //return fileResult;
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Unable to get file");
-            return Problem();
+            return default;
+            //return Problem();
         }
     }
 }
