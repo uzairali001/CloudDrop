@@ -1,4 +1,6 @@
-﻿using CloudDrop.Api.Core.Contracts.Services.Data;
+﻿using CloudDrop.Api.Core.Constants;
+using CloudDrop.Api.Core.Contracts.Services.Data;
+using CloudDrop.Api.Core.Extensions;
 using CloudDrop.Api.Core.Models.Requests;
 using CloudDrop.Shared.Models.Responses;
 
@@ -12,16 +14,19 @@ public class UserController(IUserService userService, ILogger<UserController> lo
     [HttpGet]
     public async Task<ActionResult<IEnumerable<UserResponse>>> GetUsers(CancellationToken cancellation)
     {
-        IEnumerable<UserResponse> users = await userService.GetAllUsersAsync(cancellation);
+        var roles = User.FindAll(ClaimsConstant.Role).Select(x => x.Value);
+        var userId = User.FindFirstValue<uint>(ClaimsConstant.Id);
+
+        IEnumerable<UserResponse> users = await userService.GetAllUsersAsync(roles, userId, cancellation);
         return Ok(users);
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<UserResponse>> GetUser(uint id, CancellationToken cancellation)
+    public async Task<ActionResult<UserEditResponse>> GetUser(uint id, CancellationToken cancellation)
     {
         try
         {
-            UserResponse? user = await userService.GetUserByIdAsync(id, cancellation);
+            UserEditResponse? user = await userService.GetUserByIdAsync(id, cancellation);
             return user is null ? NotFound() : Ok(user);
         }
         catch (Exception ex)

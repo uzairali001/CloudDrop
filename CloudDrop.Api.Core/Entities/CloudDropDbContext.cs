@@ -5,6 +5,7 @@ public class CloudDropDbContext(DbContextOptions<CloudDropDbContext> dbContextOp
 {
     public DbSet<UploadSessionEntity> UploadSessions { get; set; }
     public DbSet<UserEntity> Users { get; set; }
+    public DbSet<UserTypeEntity> UserTypes { get; set; }
     public DbSet<UserRoleEntity> UserRoles { get; set; }
     public DbSet<RoleEntity> Roles { get; set; }
     public DbSet<FileEntity> Files { get; set; }
@@ -39,6 +40,22 @@ public class CloudDropDbContext(DbContextOptions<CloudDropDbContext> dbContextOp
             entity.Property(e => e.IsActive).HasDefaultValueSql("'1'");
             entity.Property(e => e.IsDeleted).HasDefaultValueSql("'0'");
 
+        });
+
+        modelBuilder.Entity<UserTypeEntity>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt)
+                .ValueGeneratedOnAddOrUpdate()
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.Property(e => e.IsActive).HasDefaultValueSql("'1'");
+            entity.Property(e => e.IsDeleted).HasDefaultValueSql("'0'");
+
+            entity.HasMany(e => e.Users)
+                .WithOne(p => p.Type);
         });
 
         modelBuilder.Entity<UserRoleEntity>(entity =>

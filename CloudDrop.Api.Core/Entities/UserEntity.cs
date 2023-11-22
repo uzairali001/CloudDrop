@@ -19,6 +19,9 @@ public class UserEntity : BaseEntity
     [StringLength(100)]
     public string? LastName { get; set; }
 
+    [Column("user_type_id")]
+    public uint TypeId { get; set; }
+
     [Column("user_name")]
     [StringLength(100)]
     public string? Username { get; set; }
@@ -36,6 +39,10 @@ public class UserEntity : BaseEntity
 
 
     // Navigation Properties
+    [InverseProperty(nameof(UserTypeEntity.Users))]
+    [ForeignKey(nameof(TypeId))]
+    public UserTypeEntity Type { get; set; } = null!;
+
     [InverseProperty(nameof(FileEntity.User))]
     public ICollection<FileEntity> Files { get; set; } = new HashSet<FileEntity>();
 

@@ -1,7 +1,5 @@
 ﻿using AutoMapper;
 
-using BCrypt.Net;
-
 using CloudDrop.Api.Core.Contracts.Repositories;
 using CloudDrop.Api.Core.Contracts.Services.Data;
 using CloudDrop.Api.Core.Entities;
@@ -11,21 +9,16 @@ using CloudDrop.Shared.Models.Responses;
 namespace CloudDrop.Api.Core.Services.Data;
 public class UserService(IMapper mapper, IUserRepository userRepository) : BaseService(mapper), IUserService
 {
-    public async Task<IEnumerable<UserResponse>> GetAllUsersAsync(CancellationToken cancellation = default)
+    public async Task<IEnumerable<UserResponse>> GetAllUsersAsync(IEnumerable<string> roles, uint? userId, CancellationToken cancellation = default)
     {
-        var users = await userRepository.GetAllAsync(cancellation: cancellation);
-        if (users is null || users.Any() is false)
-        {
-            return Enumerable.Empty<UserResponse>();
-        }
-
+        IEnumerable<UserEntity> users = await userRepository.GetByRoleAsync(roles, userId, cancellation);
         return _mapper.Map<IEnumerable<UserResponse>>(users);
     }
 
-    public async Task<UserResponse?> GetUserByIdAsync(uint id, CancellationToken cancellation = default)
+    public async Task<UserEditResponse?> GetUserByIdAsync(uint id, CancellationToken cancellation = default)
     {
         var user = await userRepository.GetByIdAsync(id, cancellation: cancellation);
-        return _mapper.Map<UserResponse>(user);
+        return _mapper.Map<UserEditResponse>(user);
     }
 
     public async Task<bool> AddUserAsync(AddUserRequest request, CancellationToken cancellation = default)

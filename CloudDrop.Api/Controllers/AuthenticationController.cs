@@ -1,6 +1,4 @@
-﻿using AutoMapper;
-
-using CloudDrop.Api.Core.Constants;
+﻿using CloudDrop.Api.Core.Constants;
 using CloudDrop.Api.Core.Contracts.Services.General;
 using CloudDrop.Api.Core.Extensions;
 using CloudDrop.Api.Core.Models.Requests;

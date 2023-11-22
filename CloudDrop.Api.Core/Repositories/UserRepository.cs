@@ -31,6 +31,36 @@ public class UserRepository(CloudDropDbContext dbContext) : Base.BaseRepository<
         return BCrypt.Net.BCrypt.Verify(password, user.Password) ? user : default;
     }
 
+    public async Task<IEnumerable<UserEntity>> GetByRoleAsync(IEnumerable<string> roles, uint? userId, CancellationToken cancellation = default)
+    {
+        if (roles.Any() is false)
+        {
+            return Enumerable.Empty<UserEntity>();
+        }
+
+        var queryBuilder = _queryBuilder
+            .Where(e => e.IsDeleted == false)
+            .Where(e => e.TypeId > 1);
+
+        if (roles.Contains("Employee Manager", StringComparer.OrdinalIgnoreCase))
+        {
+            queryBuilder = queryBuilder.Where(e => e.TypeId == 2);
+        }
+        else if (roles.Contains("Tutor Manager", StringComparer.OrdinalIgnoreCase))
+        {
+            queryBuilder = queryBuilder.Where(e => e.TypeId == 3);
+        }
+        else if (roles.Contains("Tutor", StringComparer.OrdinalIgnoreCase))
+        {
+            queryBuilder = queryBuilder.Where(e => e.Id == userId)
+                .Where(e => e.TypeId == 3);
+        }
+
+        return await queryBuilder
+            .Include(e => e.Type)
+            .ToListAsync(cancellation);
+    }
+
     public async Task<UserEntity?> GetByUsernameOrEmailAsync(string username, CancellationToken cancellation = default)
     {
         return await GetFirstAsync(e => e.Email == username || e.Username == username, cancellation: cancellation);
