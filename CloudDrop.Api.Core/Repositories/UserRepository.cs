@@ -35,7 +35,7 @@ public class UserRepository(CloudDropDbContext dbContext) : Base.BaseRepository<
     {
         if (roles.Any() is false)
         {
-            return Enumerable.Empty<UserEntity>();
+            return [];
         }
 
         var queryBuilder = _queryBuilder

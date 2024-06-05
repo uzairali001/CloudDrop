@@ -1,7 +1,6 @@
 ﻿namespace CloudDrop.App.Core.Services.General;
 public static class RetryService
 {
-
     public static async Task ExecuteAsync(Func<Task> operation, Action<RetryOptions>? options = default)
     {
         Exception? innerException = null;

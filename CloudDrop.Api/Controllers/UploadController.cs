@@ -10,19 +10,8 @@ namespace CloudDrop.Api.Controllers;
 
 
 [Route("v{version:apiVersion}/upload")]
-public class UploadController : AuthorizeBaseController
+public class UploadController(IUploadSessionService uploadSessionService) : BaseController
 {
-    private readonly IUploadSessionService _uploadSessionService;
-    private readonly IConfiguration _configuration;
-
-    public UploadController(IUploadSessionService uploadSessionService,
-        IConfiguration configuration)
-    {
-        _uploadSessionService = uploadSessionService;
-        _configuration = configuration;
-    }
-
-
     [Consumes("multipart/form-data")]
     [HttpPut("{sessionId}")]
     public async Task<ActionResult> UploadFileAsChunk(string sessionId, IFormFile chunk, CancellationToken cancellation)
@@ -52,7 +41,7 @@ public class UploadController : AuthorizeBaseController
             SessionId = sessionId,
         };
 
-        bool isSuccess = await _uploadSessionService.UpdateUploadSessionAsync(request, cancellation);
+        bool isSuccess = await uploadSessionService.UpdateUploadSessionAsync(request, cancellation);
         if (!isSuccess)
         {
             return BadRequest();
@@ -81,12 +70,12 @@ public class UploadController : AuthorizeBaseController
     /// <summary>
     /// Destroys an existing upload session.
     /// </summary>
-    /// <param name="id">The ID of the upload session to be destroyed.</param>
+    /// <param name="sessionId">The ID of the upload session to be destroyed.</param>
     /// <param name="cancellation">The cancellation token.</param>
     [HttpDelete("{sessionId}")]
     public async Task<ActionResult> DestroySession(string sessionId, CancellationToken cancellation)
     {
-        bool isDistroyed = await _uploadSessionService.DestroySessionAsync(sessionId, cancellation);
-        return isDistroyed ? Ok() : NotFound();
+        bool isDestroyed = await uploadSessionService.DestroySessionAsync(sessionId, cancellation);
+        return isDestroyed ? Ok() : NotFound();
     }
 }

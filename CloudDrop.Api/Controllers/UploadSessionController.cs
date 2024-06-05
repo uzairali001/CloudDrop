@@ -15,23 +15,15 @@ namespace CloudDrop.Api.Controllers;
 /// An upload session is a temporary storage space for uploaded files. It is created when a user starts an upload, and it is destroyed when the upload is complete or the user cancels the upload.
 /// </summary>
 [Route("v{version:apiVersion}/upload/session")]
-public class UploadSessionController : AuthorizeBaseController
+public class UploadSessionController(IUploadSessionService uploadSessionService,
+    ILogger<UploadSessionController> logger) : AuthorizeBaseController
 {
-    private readonly IUploadSessionService _uploadSessionService;
-    private readonly ILogger<UploadSessionController> _logger;
-
-    public UploadSessionController(IUploadSessionService uploadSessionService,
-        ILogger<UploadSessionController> logger)
-    {
-        _uploadSessionService = uploadSessionService;
-        _logger = logger;
-    }
 
 
     /// <summary>
     /// Creates a new upload session.
     /// </summary>
-    /// <param name="req">The name and description of the file being uploaded and conflict behaviour when file already exist</param>
+    /// <param name="req">The name and description of the file being uploaded and conflict behavior when file already exist</param>
     /// <param name="cancellation">The cancellation token.</param>
     /// <returns>The ID of the newly created upload session.</returns>
     [HttpPost]
@@ -46,14 +38,14 @@ public class UploadSessionController : AuthorizeBaseController
                 Description = req.Description,
                 UserId = User.RequiredFirstValue<uint>(ClaimsConstant.Id),
             };
-            var resp = await _uploadSessionService.CreateUploadSessionAsync(command, cancellation);
+            var resp = await uploadSessionService.CreateUploadSessionAsync(command, cancellation);
 
             return resp is not null
                 ? Ok(resp) : BadRequest(resp);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unable to create Upload Session");
+            logger.LogError(ex, "Unable to create Upload Session");
             return BadRequest();
         }
     }
