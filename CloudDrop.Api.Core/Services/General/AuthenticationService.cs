@@ -46,6 +46,7 @@ public class AuthenticationService(IMapper mapper,
             Message = "Authenticated",
             Data = new AuthenticationDataResponse()
             {
+                UserId = (int)user.Id,
                 User = _mapper.Map<UserResponse>(user),
                 Roles = _mapper.Map<IEnumerable<RoleResponse>>(user.UserRoles.Select(x => x.Role)),
                 AccessToken = GetAccessToken(user),
@@ -76,6 +77,7 @@ public class AuthenticationService(IMapper mapper,
 
         return new AuthenticationDataResponse()
         {
+            UserId = (int)entity.Id,
             User = _mapper.Map<UserResponse>(entity),
             Roles = _mapper.Map<IEnumerable<RoleResponse>>(entity.UserRoles.Select(x => x.Role)),
             AccessToken = GetAccessToken(entity),

@@ -179,8 +179,6 @@ else
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseStatusCodePages();
-
 app.UseAuthorization();
 
 app.MapControllers();
